@@ -18,5 +18,17 @@ export default NextAuth({
                 'read:gpg_key',
             ]
         }),
-    ]
+    ],
+    callbacks: {
+        async jwt(token, user, account, profile, isNewUser) {
+            if (account?.accessToken) {
+                token.accessToken = account.accessToken;
+            }
+            return token
+        },
+        async session(session, token) {
+            session.accessToken = token.accessToken
+            return session
+        }
+    }
 })
