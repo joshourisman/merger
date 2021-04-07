@@ -10,6 +10,12 @@ query Repo($login: String!, $name: String!) {
       nameWithOwner
       pullRequests(first: 100, states: OPEN) {
         totalCount
+        nodes {
+          id
+          number
+          title
+          permalink
+        }
       }
     }
   }
@@ -37,7 +43,14 @@ const Repository = () => {
 
   return <div>
     <Head><title>{nameWithOwner}</title></Head>
-    <main>{nameWithOwner}</main>
+    <main>
+      <h1>{nameWithOwner}</h1>
+      <ul>
+        {pullRequests.nodes.map(({ title, permalink, number }, index) => <li key={index}>
+          <a href={permalink} target="_blank">{number}. {title}</a>
+        </li>)}
+      </ul>
+    </main>
   </div>
 }
 
