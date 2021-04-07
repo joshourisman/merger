@@ -4,10 +4,22 @@ import Link from 'next/link'
 const QUERY = gql`
 query { 
   viewer {
+    id
+    avatarUrl
+    organizations(first: 100) {
+      id
+      name
+      login
+    }
     repositories(first: 100, ownerAffiliations: [OWNER]) {
       totalCount
       nodes {
         id
+        name
+        owner {
+          id
+          login
+        }
         nameWithOwner
         pullRequests(first: 100, states: OPEN) {
           totalCount
