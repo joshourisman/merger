@@ -1,13 +1,12 @@
 import 'tailwindcss/tailwind.css'
 import { Provider } from 'next-auth/client'
-import { ApolloProvider } from '@apollo/client'
-import client from '../apollo-client'
+import SignIn from '../components/SignIn'
 
 function MyApp({ Component, pageProps }) {
   return <Provider session={pageProps.session}>
-    <ApolloProvider client={client}>
+    <SignIn>
       <Component {...pageProps} />
-    </ApolloProvider>
+    </SignIn>
   </Provider>
 }
 
