@@ -3,9 +3,11 @@ import Head from 'next/head'
 import { useQuery, gql } from '@apollo/client'
 
 const QUERY = gql`
-query Repo($name: String!) { 
-  viewer {
+query Repo($login: String!, $name: String!) { 
+  repositoryOwner(login: $login) {
     repository(name: $name) {
+      id
+      nameWithOwner
       pullRequests(first: 100, states: OPEN) {
         totalCount
       }
@@ -16,17 +18,26 @@ query Repo($name: String!) {
 
 const Repository = () => {
   const router = useRouter()
-  const { query: { repo: [user, repo] } } = router
+  const { query: { repo: [login, name] } } = router
   const { data, loading, error } = useQuery(QUERY, {
-    variables: {
-      name: repo
-    }
+    variables: { login, name }
   });
+
+  if (loading) {
+    return <h2>Loading...</h2>;
+  }
+
+  if (error) {
+    console.log(error)
+    return <p>error...</p>
+  }
+
   console.log(data)
+  const { repositoryOwner: { repository: { nameWithOwner, pullRequests } } } = data;
 
   return <div>
-    <Head><title>{user}/{repo}</title></Head>
-    <main>{user}/{repo}</main>
+    <Head><title>{nameWithOwner}</title></Head>
+    <main>{nameWithOwner}</main>
   </div>
 }
 
