@@ -4,6 +4,7 @@ const QUERY = gql`
 query { 
   viewer {
     repositories(first: 100, ownerAffiliations: [OWNER]) {
+      totalCount
       nodes {
         id
         nameWithOwner
@@ -28,10 +29,10 @@ export default function Repositories() {
     return <p>error...</p>
   }
 
-  const { viewer: { repositories: { nodes: repos } } } = data;
+  const { viewer: { repositories: { totalCount, nodes: repos } } } = data;
 
   return <div>
-    <h1>Repositories:</h1>
+    <h1>Repositories ({totalCount}):</h1>
     <ul>
       {repos.map(({ nameWithOwner: repo, pullRequests: { totalCount } }, index) => {
         return <li key={index}>{repo} ({totalCount})</li>
