@@ -1,4 +1,5 @@
 import { useQuery, gql } from '@apollo/client'
+import Link from 'next/link'
 
 const QUERY = gql`
 query { 
@@ -35,7 +36,7 @@ export default function Repositories() {
     <h1>Repositories ({totalCount}):</h1>
     <ul>
       {repos.map(({ nameWithOwner: repo, pullRequests: { totalCount } }, index) => {
-        return <li key={index}>{repo} ({totalCount})</li>
+        return <li key={index}><Link href={repo}><a>{repo}</a></Link> ({totalCount})</li>
       })}
     </ul>
   </div>
