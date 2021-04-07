@@ -4,14 +4,18 @@ const QUERY = gql`
 query { 
     viewer {
       repositories(first: 100, ownerAffiliations: [OWNER]) {
-        edges {
-          node {
+          nodes {
             id
             nameWithOwner
+            pullRequests(first: 100) {
+              nodes {
+                id
+                title
+              }
+            }
           }
         }
       }
-    }
   }
 `;
 
@@ -27,12 +31,14 @@ export default function Repositories() {
         return <p>error...</p>
     }
 
-    const { viewer: { repositories: { edges: repos } } } = data;
+    const { viewer: { repositories: { nodes: repos } } } = data;
 
     return <div>
         <h1>Repositories:</h1>
         <ul>
-            {repos.map(({ node: { nameWithOwner: repo } }, index) => <li key={index}>{repo}</li>)}
+            {repos.map(({ nameWithOwner: repo, pullRequests: { nodes: pullRequests } }, index) => {
+                return <li key={index}>{repo} ({pullRequests.length})</li>
+            })}
         </ul>
     </div>
 }
