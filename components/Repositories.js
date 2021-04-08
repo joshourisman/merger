@@ -9,23 +9,29 @@ const graphQLClient = new GraphQLClient('https://api.github.com/graphql', {
   }
 })
 
-const QUERY = gql`
-query { 
+const VIEWER_QUERY = gql`
+query ViewerQuery($afterCursor: String) { 
   viewer {
     id
     avatarUrl
-    repositories(first: 100, ownerAffiliations: [OWNER]) {
+    repositories(first: 5, after: $afterCursor) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
       totalCount
-      nodes {
-        id
-        name
-        owner {
+      edges {
+        node {
           id
-          login
-        }
-        nameWithOwner
-        pullRequests(first: 100, states: OPEN) {
-          totalCount
+          name
+          owner {
+            id
+            login
+          }
+          nameWithOwner
+          pullRequests(states: OPEN) {
+            totalCount
+          }
         }
       }
     }
@@ -41,7 +47,8 @@ export default function Repositories() {
     }
   });
 
-  const { data, error } = useSWR(QUERY, (query) => graphQLClient.request(query));
+  let afterCursor;
+  const { data, error } = useSWR([VIEWER_QUERY, afterCursor], (query, afterCursor) => graphQLClient.request(query, { afterCursor }));
   const loading = !data;
 
 
@@ -54,12 +61,12 @@ export default function Repositories() {
     return <p>error...</p>
   }
 
-  const { viewer: { repositories: { totalCount, nodes: repos } } } = data;
+  const { viewer: { repositories: { totalCount, edges, pageInfo: { hasNextPage, endCursor } } } } = data;
 
   return <div>
     <h1>Repositories ({totalCount}):</h1>
     <ul>
-      {repos.map(({ nameWithOwner: repo, pullRequests: { totalCount } }, index) => {
+      {edges.map(({ node: { nameWithOwner: repo, pullRequests: { totalCount } } }, index) => {
         return <li key={index}><Link href={repo}><a>{repo}</a></Link> ({totalCount})</li>
       })}
     </ul>
