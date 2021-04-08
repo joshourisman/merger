@@ -2,6 +2,7 @@ import { GraphQLClient, gql } from 'graphql-request'
 import { useSession } from 'next-auth/client'
 import { useSWRInfinite } from 'swr'
 import Link from 'next/link'
+import _ from 'lodash'
 
 const graphQLClient = new GraphQLClient('https://api.github.com/graphql', {
   headers: {
@@ -67,12 +68,14 @@ export default function Repositories() {
 
   if (data.length === size && data[data.length - 1].viewer.repositories.pageInfo.hasNextPage) setSize(size + 1);
 
+  const reposWithPRs = _.filter(data.map((page) => page.viewer.repositories.edges).reduce((x, y) => [...x, ...y]), (repo) => repo.node.pullRequests.totalCount > 0);
+
   return <div>
-    <h1>Repositories ({data[0].viewer.repositories.totalCount}):</h1>
+    <h1>Repositories ({reposWithPRs.length}/{data[0].viewer.repositories.totalCount}):</h1>
     <ul>
-      {data.map((page) => page.viewer.repositories.edges.map(({ node: { nameWithOwner: repo, pullRequests: { totalCount } } }, index) => {
-        return <li key={index}><Link href={repo}><a>{repo}</a></Link> ({totalCount})</li>
-      }))}
+      {reposWithPRs.map(({ node: { nameWithOwner, pullRequests: { totalCount } } }, index) => {
+        return <li key={index}><Link href={nameWithOwner}><a>{nameWithOwner}</a></Link> ({totalCount})</li>
+      })}
     </ul>
   </div>
 }
