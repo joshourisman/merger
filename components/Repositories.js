@@ -1,6 +1,6 @@
 import { GraphQLClient, gql } from 'graphql-request'
 import { useSession } from 'next-auth/client'
-import useSWR from 'swr'
+import { useSWRInfinite } from 'swr'
 import Link from 'next/link'
 
 const graphQLClient = new GraphQLClient('https://api.github.com/graphql', {
@@ -14,7 +14,7 @@ query ViewerQuery($afterCursor: String) {
   viewer {
     id
     avatarUrl
-    repositories(first: 5, after: $afterCursor) {
+    repositories(first: 100, after: $afterCursor) {
       pageInfo {
         hasNextPage
         endCursor
@@ -47,8 +47,18 @@ export default function Repositories() {
     }
   });
 
-  let afterCursor;
-  const { data, error } = useSWR([VIEWER_QUERY, afterCursor], (query, afterCursor) => graphQLClient.request(query, { afterCursor }));
+  const { data, error, size, setSize } = useSWRInfinite((pageIndex, previousPageData) => {
+    console.log(pageIndex, previousPageData)
+    if (!previousPageData) return [VIEWER_QUERY, null];
+
+    const { viewer: { repositories: { pageInfo: { hasNextPage, endCursor } } } } = previousPageData;
+    console.log(hasNextPage, endCursor);
+
+    if (hasNextPage) return [VIEWER_QUERY, endCursor];
+
+    return null
+
+  }, (query, afterCursor) => graphQLClient.request(query, { afterCursor }));
   const loading = !data;
 
 
@@ -61,10 +71,12 @@ export default function Repositories() {
     return <p>error...</p>
   }
 
-  const { viewer: { repositories: { totalCount, edges, pageInfo: { hasNextPage, endCursor } } } } = data;
+  const edges = data.map((page) => page.viewer.repositories.edges).reduce((x, y) => [...x, ...y]);
+
+  // if (data.map((page) => page.viewer.repositories.pageInfo.hasNextPage).reduce((x, y) => x && y)) setSize(size + 1);
 
   return <div>
-    <h1>Repositories ({totalCount}):</h1>
+    <h1>Repositories ({data[0].viewer.repositories.totalCount}):</h1>
     <ul>
       {edges.map(({ node: { nameWithOwner: repo, pullRequests: { totalCount } } }, index) => {
         return <li key={index}><Link href={repo}><a>{repo}</a></Link> ({totalCount})</li>
