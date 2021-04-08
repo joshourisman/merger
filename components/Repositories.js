@@ -1,16 +1,19 @@
-import { useQuery, gql } from '@apollo/client'
+import { GraphQLClient, gql } from 'graphql-request'
+import { useSession } from 'next-auth/client'
+import useSWR from 'swr'
 import Link from 'next/link'
+
+const graphQLClient = new GraphQLClient('https://api.github.com/graphql', {
+  headers: {
+    authorization: `Bearer`
+  }
+})
 
 const QUERY = gql`
 query { 
   viewer {
     id
     avatarUrl
-    organizations(first: 100) {
-      id
-      name
-      login
-    }
     repositories(first: 100, ownerAffiliations: [OWNER]) {
       totalCount
       nodes {
@@ -31,7 +34,16 @@ query {
 `;
 
 export default function Repositories() {
-  const { data, loading, error } = useQuery(QUERY);
+  const [session] = useSession();
+  const graphQLClient = new GraphQLClient('https://api.github.com/graphql', {
+    headers: {
+      authorization: `Bearer ${session.accessToken}`
+    }
+  });
+
+  const { data, error } = useSWR(QUERY, (query) => graphQLClient.request(query));
+  const loading = !data;
+
 
   if (loading) {
     return <h2>Loading...</h2>;
