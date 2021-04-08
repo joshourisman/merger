@@ -48,16 +48,10 @@ export default function Repositories() {
   });
 
   const { data, error, size, setSize } = useSWRInfinite((pageIndex, previousPageData) => {
-    console.log(pageIndex, previousPageData)
-    if (!previousPageData) return [VIEWER_QUERY, null];
-
+    if (pageIndex === 0) return [VIEWER_QUERY, null];
     const { viewer: { repositories: { pageInfo: { hasNextPage, endCursor } } } } = previousPageData;
-    console.log(hasNextPage, endCursor);
-
     if (hasNextPage) return [VIEWER_QUERY, endCursor];
-
     return null
-
   }, (query, afterCursor) => graphQLClient.request(query, { afterCursor }));
   const loading = !data;
 
@@ -71,16 +65,14 @@ export default function Repositories() {
     return <p>error...</p>
   }
 
-  const edges = data.map((page) => page.viewer.repositories.edges).reduce((x, y) => [...x, ...y]);
-
-  // if (data.map((page) => page.viewer.repositories.pageInfo.hasNextPage).reduce((x, y) => x && y)) setSize(size + 1);
+  if (data.length === size && data[data.length - 1].viewer.repositories.pageInfo.hasNextPage) setSize(size + 1);
 
   return <div>
     <h1>Repositories ({data[0].viewer.repositories.totalCount}):</h1>
     <ul>
-      {edges.map(({ node: { nameWithOwner: repo, pullRequests: { totalCount } } }, index) => {
+      {data.map((page) => page.viewer.repositories.edges.map(({ node: { nameWithOwner: repo, pullRequests: { totalCount } } }, index) => {
         return <li key={index}><Link href={repo}><a>{repo}</a></Link> ({totalCount})</li>
-      })}
+      }))}
     </ul>
   </div>
 }
